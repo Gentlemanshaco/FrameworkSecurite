@@ -32,8 +32,8 @@ while read line; do
   echo "$line"
 done < "group.ldif"
 
-    # Ask user if they want to create another user
-    read -p "Create another user? (y/n) " CONTINUE
+    # Ask user if they want to create another group
+    read -p "Create another group? (y/n) " CONTINUE
     if [[ "$CONTINUE" == "n" ]]; then
         break
     fi
