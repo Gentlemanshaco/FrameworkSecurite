@@ -1,0 +1,81 @@
+version: "2.2"
+services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./container-config:/etc/caddy
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - reverseproxy-nw
+
+networks:
+  reverseproxy-nw:
+    external: true
+
+# Guacamole
+services:
+  guacamole:
+    image: guacamole/guacamole:latest
+    container_name: guacamole
+    security_opt:
+      - label:disable
+    volumes:
+      - ./container-data/extensions:/guacamole-home/extensions
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - GUACD_HOSTNAME=guacamole-guacd
+      - GUACAMOLE_HOME=/guacamole-home
+      - POSTGRES_HOSTNAME=guacamole-db
+      - POSTGRES_DATABASE=guacamole_db
+      - POSTGRES_USER=guacamole
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#don't forget to add a .env file in the same folder with all your variables starting with $
+    ports:
+#      - 8080:8080
+      - 8080
+    restart: always
+    networks:
+      - reverseproxy-nw
+      - guacamole-nw
+
+  guacamole-guacd:
+    image: guacamole/guacd:latest
+    container_name: guacamole-guacd
+    security_opt:
+      - label:disable
+    networks:
+      - guacamole-nw
+    restart: always
+    volumes:
+      - ./container-data/records:/record
+      - ./container-data/drive:/drive
+      - /etc/localtime:/etc/localtime:ro
+
+  guacamole-db:
+    image: postgres:13
+    container_name: guacamole-db
+    security_opt:
+      - label:disable
+    restart: always
+    environment:
+      - POSTGRES_DB=guacamole_db
+      - POSTGRES_USER=guacamole
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./container-data/db:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+      - ./container-data/db-init/initdb.sql:/docker-entrypoinitdb.d/initdb.sql 
+    networks:
+      - guacamole-nw
+
+networks:
+  guacamole-nw:
+  reverseproxy-nw:
